@@ -1,15 +1,33 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
-  const [domain, setDomain] = useState("")
-  const [content, setContent] = useState("")
-  const navigate = useNavigate()
+  const [domain, setDomain] = useState("");
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = () => {
-    if (!domain.trim()) return alert("Please enter a domain")
-    navigate("/results", { state: { domain, content } })
-  }
+  const handleSubmit = async () => {
+    if (!domain.trim()) return alert("Please enter a domain");
+
+    setLoading(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain, content }),
+      });
+      const data = await res.json();
+
+      navigate("/results", {
+        state: { domain, content, recommendation: data.recommendation },
+      });
+    } catch (error) {
+      alert("⚠️ Failed to fetch recommendation from backend");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center w-full">
@@ -20,8 +38,8 @@ function Home() {
               Smart Ad Placement
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-prose">
-              Enter your business domain and content. We’ll recommend the best platform
-              for your advertisement based on current market demand.
+              Enter your business domain and content. We’ll recommend the best
+              platform for your advertisement based on current market demand.
             </p>
           </div>
 
@@ -55,9 +73,10 @@ function Home() {
               <div className="flex items-center justify-end">
                 <button
                   onClick={handleSubmit}
-                  className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-4 sm:px-5 py-2.5 font-medium shadow-sm hover:shadow transition-all active:scale-[.99] w-full sm:w-auto"
+                  disabled={loading}
+                  className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-4 sm:px-5 py-2.5 font-medium shadow-sm hover:shadow transition-all active:scale-[.99] w-full sm:w-auto disabled:opacity-50"
                 >
-                  Get Recommendation
+                  {loading ? "Loading..." : "Get Recommendation"}
                 </button>
               </div>
             </div>
@@ -65,6 +84,6 @@ function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-export default Home
+export default Home;
